@@ -67,6 +67,7 @@ public class ContactsManager extends CordovaPlugin {
             ContactsContract.CommonDataKinds.Phone.NORMALIZED_NUMBER,
             ContactsContract.CommonDataKinds.Phone.TYPE,
             ContactsContract.Data.CONTACT_ID,
+            ContactsContract.CommonDataKinds.Email.ADDRESS,
             ContactsContract.Data.MIMETYPE
         };
         // Retrieve only the contacts with a phone number at least
@@ -98,6 +99,7 @@ public class ContactsManager extends CordovaPlugin {
 
         JSONObject contact = new JSONObject();
         JSONArray phones = new JSONArray();
+        JSONArray emails = new JSONArray();
 
         try {
             if (c.getCount() > 0) {
@@ -111,10 +113,12 @@ public class ContactsManager extends CordovaPlugin {
                     if (!oldContactId.equals(contactId)) {
                         // Populate the Contact object with it's arrays and push the contact into the contacts array
                         contact.put("phoneNumbers", phones);
+                        contact.put("emails", emails);
                         contacts.put(contact);
                         // Clean up the objects
                         contact = new JSONObject();
                         phones = new JSONArray();
+                        emails = new JSONArray();
 
                         // Set newContact to true as we are starting to populate a new contact
                         newContact = true;
@@ -136,12 +140,16 @@ public class ContactsManager extends CordovaPlugin {
                     else if (mimetype.equals(ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE)) {
                         phones.put(getPhoneNumber(c));
                     }
+                    else if (mimetype.equals(ContactsContract.CommonDataKinds.Email.CONTENT_ITEM_TYPE)) {
+                        emails.put(getEmail(c));
+                    }
 
                     // Set the old contact ID
                     oldContactId = contactId;
                 } 
                 // Push the last contact into the contacts array
                 contact.put("phoneNumbers", phones);
+                contact.put("emails", emails);
                 contacts.put(contact);
             }
         } catch (JSONException e) {
@@ -166,6 +174,15 @@ public class ContactsManager extends CordovaPlugin {
         return phoneNumber;
     }
 
+     /**
+     * Create a email JSONObject
+     * @param cursor the current database row
+     * @return a JSONObject representing an email address
+     */
+    private String getEmail(Cursor cursor) throws JSONException {
+        String email = cursor.getString(cursor.getColumnIndex(ContactsContract.CommonDataKinds.Email.DATA));
+        return email;
+    }
 
     /**
      * Retrieve the type of the phone number based on the type code
