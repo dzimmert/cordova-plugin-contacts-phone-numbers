@@ -145,8 +145,6 @@
                     }
                     NSString *contactId = [NSString stringWithFormat:@"%d", ABRecordGetRecordID(ref)];
 
-                    //NSLog(@"Name %@ - %@", displayName, contactId);
-
                     NSMutableDictionary* contactDictionary = [NSMutableDictionary dictionaryWithCapacity:1];
                     [contactDictionary setObject: contactId forKey:@"id"];
                     [contactDictionary setObject: displayName forKey:@"displayName"];
@@ -154,6 +152,22 @@
                     [contactDictionary setObject: lastName forKey:@"lastName"];
                     [contactDictionary setObject: phoneNumbersArray forKey:@"phoneNumbers"];
                     [contactDictionary setObject: allEmailsArray forKey:@"emails"];
+
+                    //fetching photo
+                    NSData *imageData = (__bridge_transfer NSData *) ABPersonCopyImageData(ref);
+                    UIImage *image = [UIImage imageWithData:(NSData *)imageData];
+
+                    //photo is saved to grab path
+                    NSError *err;
+                    NSArray *paths = NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES);
+                    NSString * photoPath = [paths  objectAtIndex:0];
+                    photoPath = [photoPath stringByAppendingPathComponent:contactId];
+                    [imageData writeToFile:photoPath options:NSDataWritingAtomic error:&err];
+                    if(err) {
+                        photoPath = @"";
+                    }
+
+                    [contactDictionary setObject: photoPath forKey:@"photo"];
 
                     //add the contact to the list to return
                     [contactsWithPhoneNumbers addObject:contactDictionary];
