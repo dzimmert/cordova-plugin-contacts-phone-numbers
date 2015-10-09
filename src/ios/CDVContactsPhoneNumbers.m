@@ -47,12 +47,14 @@
             CFRelease(records);
 
             for(int i = 0; i < phoneContacts.count; i++) {
-                ABRecordRef ref = (__bridge ABRecordRef)[phoneContacts objectAtIndex:i];
+                ABRecordRef ref = (__bridge ABRecordRef)[phoneContacts objectAtIndex:i];      
 
                 ABMultiValueRef phones = ABRecordCopyValue(ref, kABPersonPhoneProperty);
                 int countPhones = ABMultiValueGetCount(phones);
+
                 //we skip users with no phone numbers
                 if (countPhones > 0) {
+
                     NSMutableArray* phoneNumbersArray = [[NSMutableArray alloc] init];
 
                     for(CFIndex j = 0; j < countPhones; j++) {
@@ -92,6 +94,38 @@
                         
                         if (phoneNumberRef) CFRelease(phoneNumberRef);
                         if (phoneTypeLabelRef) CFRelease(phoneTypeLabelRef);
+
+                    }
+
+                    //fetch emails
+                    NSMutableArray* allEmailsArray = [[NSMutableArray alloc] init];
+
+                    ABMultiValueRef emails = ABRecordCopyValue(ref, kABPersonEmailProperty); 
+                    int countEmails = ABMultiValueGetCount(emails);
+
+                    for(CFIndex j = 0; j < countEmails; j++) {
+                        CFStringRef emailRef = ABMultiValueCopyValueAtIndex(emails, j);   
+                        CFStringRef emailTypeLabelRef = ABMultiValueCopyLabelAtIndex(emails, j);
+                        NSString *email = (__bridge NSString *) emailRef;
+                        NSString *emailLabel = @"OTHER";
+                        if (emailTypeLabelRef) {
+                            if (CFEqual(emailTypeLabelRef, kABWorkLabel)) {
+                                emailLabel = @"WORK";
+                            } else if (CFEqual(emailTypeLabelRef, kABHomeLabel)) {
+                                emailLabel = @"HOME";
+                            }
+                        }
+
+                        // creating the nested element with the email details
+                        NSMutableDictionary* emailDictionary = [NSMutableDictionary dictionaryWithCapacity:1];
+                        [emailDictionary setObject: email forKey:@"email"];
+                        [emailDictionary setObject: emailLabel forKey:@"type"];
+                        // adding this phone number to the list of phone numbers for this user
+                        [allEmailsArray addObject:emailDictionary]; 
+                        
+                        if (emailRef) CFRelease(emailRef);
+                        if (emailTypeLabelRef) CFRelease(emailTypeLabelRef);
+
                     }
 
                     // creating the contact object
@@ -119,6 +153,7 @@
                     [contactDictionary setObject: firstName forKey:@"firstName"];
                     [contactDictionary setObject: lastName forKey:@"lastName"];
                     [contactDictionary setObject: phoneNumbersArray forKey:@"phoneNumbers"];
+                    [contactDictionary setObject: allEmailsArray forKey:@"emails"];
 
                     //add the contact to the list to return
                     [contactsWithPhoneNumbers addObject:contactDictionary];
